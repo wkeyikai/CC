@@ -23,7 +23,7 @@ import ccTable from '@/components/cc/cc-table'
 import ccTableCol from '@/components/cc/cc-table-col'
 export default {
     components: {
-        treeview,gismap,gisline,gismark
+        ccTable,ccTableCol
     },
     components: { ccTable, ccTableCol },
 	data () {
