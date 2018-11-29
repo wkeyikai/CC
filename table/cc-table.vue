@@ -1,41 +1,21 @@
 <template>
-    <div class="table-scope">
-        <div class="relative">
-            <div class="table-layout-fix" @scroll="scrollFunction">
-                <div class="table-layout" ref="tableSlot">
-                    <!--<list-loading ref="loading"></list-loading>-->
-                    <table>
-                        <thead>
-                            <tr v-for="(row,idx) in ['tableTitle','tableTitleFixed']" ref="tableTitle" :key="idx">
-                                <td v-for="(col,i) in title" :key="i">
-                                    <sort-click v-if="col.sort" :title="col.label" v-on:sortby="sortBy" :keys="col.sort" :column="column" :type="type" ></sort-click>
-                                    <template v-else>{{col.label}}</template>
-                                </td>
-                            </tr>
-                        </thead>
-                        <!--<tbody>
-                            <tr v-for="(row,index) in data" :key="index">
-                                <template v-for="col in grid">
-                                    <slot :name="col" :vm="this" :row="row" :col="col" :text="row[col]">{{row[col]}}</slot>
-                                </template>
-                            </tr>
-                            <tr v-show="data.length==0" class="noData"><td>{{$t('rp_no_data')}}</td></tr>
-                        </tbody>-->
-                        <template>
-                        <table-view-tbody>
-                        </table-view-tbody>
-                        </template>
-                        <!--<tbody>
-                            <tr v-for="(row,index) in data" :key="index">
-                                <template>
-                                    <slot  :row="row" :grid="grid">
-                                    </slot>
-                                </template>
-                            </tr>
-                            <tr v-show="data.length==0" class="noData"><td>{{$t('rp_no_data')}}</td></tr>
-                        </tbody>-->
-                    </table>
-                </div>
+    <div class="cc-table--scope">
+        <div class="cc-relative" :style="{width:tableWidth,height:tableHeight}">
+            <div class="cc-fix" :style="{width:tableWidth,height:tableHeight}" @scroll="scrollFunction">
+                <table class="cc-table" :style="{width:tableWidth,height:tableHeight}">
+                    <thead>
+                        <tr v-for="(row,idx) in ['tableTitle','tableTitleFixed']" ref="tableTitle" :key="idx">
+                            <td v-for="(col,i) in title" :key="i">
+                                <sort-click v-if="col.sort" :title="col.label" v-on:sortby="sortBy" :keys="col.sort" :column="column" :type="type" ></sort-click>
+                                <template v-else>{{col.label}}</template>
+                            </td>
+                        </tr>
+                    </thead>
+                    <template>
+                    <cc-tbody>
+                    </cc-tbody>
+                    </template>
+                </table>
             </div>
         </div>
     </div>
@@ -44,7 +24,7 @@
 export default {
     name: 'cc-table',
     components: {
-        'table-view-tbody': {
+        'cc-tbody': {
             render (h) {
                 // console.log('children',this.$parent.data)
                 // console.log('>>',this.$parent.$slots.default)
@@ -55,14 +35,14 @@ export default {
                 let slotMapping = {}
                 let title = []
                 let grids = this.$parent.grid
-                let slotsDef = this.$parent.$slots.default.filter((v) => { return v.componentOptions && v.componentOptions.tag === 'table-view-col' })
+                let slotsDef = this.$parent.$slots.default.filter((v) => { return v.componentOptions && v.componentOptions.tag === 'cc-table-col' })
                 // console.log('slotsDef',slotsDef)
                 slotsDef.forEach((slot) => {
                     slotMapping[slot.data.attrs.name] = slot
                 })
                 // console.log('map',slotMapping)
                 grids.forEach((grid) => {
-                    // console.log(grid,slotMapping[grid]);
+                    // console.log(grid,slotMapping[grid])
                     let cr = slotMapping[grid]
                     if (cr) {
                         // title
@@ -89,7 +69,7 @@ export default {
                         })
                     }
                 })
-                // console.log('title',title);
+                // console.log('title',title)
                 this.$parent.title = title
                 let rowSlots = []
                 this.$parent.data.forEach((val, i) => {
@@ -116,7 +96,7 @@ export default {
                     rowSlots.push(h('tr', trSet, slots))
                 })
                 if (this.$parent.data.length === 0) {
-                    rowSlots = [h('tr', {class: 'noData'}, [h('td', this.$t('rp_no_data'))])]
+                    rowSlots = [h('tr', {class: 'cc-no--data'}, [h('td', 'no data')])]
                 }
                 // slots = [h('tr', [h('td','1'),h('td','2')]),h('tr', [h('td','2'),h('td','1')])]
                 return h('tbody', rowSlots)
@@ -126,8 +106,8 @@ export default {
             props: ['title', 'column', 'keys', 'type'],
             template: `
                 <div>
-                    <a class="sort-click" @click="sortBy(keys)" style="font-weight: bold;cursor: pointer; text-decoration: underline;color: #428BCA;">{{title}}</a>
-                    <div class="sort">
+                    <a class="cc-sort--click" @click="sortBy(keys)" style="font-weight: bold;cursor: pointer; text-decoration: underline;color: #428BCA;">{{title}}</a>
+                    <div class="cc-sort--iocn">
                         <i class="fa fa-caret-up" v-if=" column!=keys || type == 'asc'"></i>
                         <i class="fa fa-caret-down" v-if=" column!=keys || type == 'desc'"></i>
                     </div>
@@ -140,10 +120,12 @@ export default {
             }
         }
     },
-    props: ['data', 'grid', 'column', 'type'],
+    props: ['data', 'grid', 'column', 'type', 'width', 'height'],
     data () {
         return {
-           title: []
+            tableWidth: this.width || '100%',
+            tableHeight: this.height || '100%',
+            title: []
         }
     },
     mounted () {
@@ -200,42 +182,64 @@ export default {
 }
 </script>
 <style lang="scss">
-.table-scope {
-    height: 590px;
-    width: 100%;
-    overflow: hidden;
+/*.cc-table--scope {
+}*/
+td,tr{
+    margin: 0;
+    padding: 0;
 }
-.relative {
+.cc-table{
+    border-spacing: 0;
+}
+.cc-relative {
+    overflow: hidden;
     position: relative;
 }
-.table-layout-fix {
-    width: 100%;
-    height: 590px;
+.cc-fix {
     overflow: auto;
 }
-.table-layout {
-    min-width: unset;
+.cc-table tbody td {
+    box-sizing: content-box;
+    text-align: center;
+    line-height: 36px;
+    padding: 0 15px 0 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid #ebeef5;
 }
-.table-layout thead tr {
-    width: 100%;
-    background-color: #e5e5e5;
+.cc-table thead tr{
+    white-space: nowrap;
+    text-align: center;
+    line-height: 36px;
+    color: #909399;
+    background-color: #ffffff;
+    border-bottom: 1px solid #ebeef5;
 }
-.table-layout thead tr:nth-of-type(2) {
+.cc-table thead tr:nth-of-type(2) {
     position: absolute;
     top: 0px;
     z-index: 100;
 }
-.sort-click{
+.cc-sort--click{
     font-weight: bold;
     cursor: pointer;
     text-decoration: underline;
     color: rgb(66, 139, 202)
 }
-.sort {
+.cc-sort--iocn {
     display: inline-block;
     vertical-align: middle;
     position: relative;
     left: 3px;
     top: -2px;
+}
+.cc-no--data {
+    border-bottom: none;
+    background-color: transparent !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%);
 }
 </style>
