@@ -2,7 +2,7 @@ use cc
 
 import src\main.js
 
-```vue
+```javascript
 import Vue from 'vue'
 import App from './App'
 import router from './router'
