@@ -1,4 +1,32 @@
+use cc
+
+import src\main.js
+
+```vue
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+import './plugin/cc'
+
+Vue.config.productionTip = false
+
+new Vue({
+	el: '#app',
+	router,
+	components: { App },
+	template: '<App/>'
+})
+```
+or
+
+import other component(ex: src\component\main.vue )
+
+```vue
+import '@/plugin/cc'
+```
+
 use table
+
 ```vue
 <template>
     <div>
@@ -19,12 +47,8 @@ use table
 	</div>
 </template>
 <script>
-import ccTable from '@/components/cc/cc-table'
-import ccTableCol from '@/components/cc/cc-table-col'
+import '@/plugin/cc'
 export default {
-    components: {
-        ccTable,ccTableCol
-    },
     components: { ccTable, ccTableCol },
 	data () {
 		return {
