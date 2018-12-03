@@ -1,18 +1,36 @@
 <template>
     <div class="cc-table--scope">
         <div class="cc-relative" :style="{width:tableWidth,height:tableHeight}">
-            <div class="cc-fix" :style="{width:tableWidth,height:tableHeight}" @scroll="scrollFunction">
+            <div class="cc-fix" :style="{width:tableWidth,height:tableHeight}" @scroll="scrollFunction" ref="scroll">
                 <table class="cc-table" :style="{width:tableWidth,height:tableHeight}">
                     <thead>
                         <tr v-for="(row,idx) in ['tableTitle','tableTitleFixed']" ref="tableTitle" :key="idx">
-                            <td v-for="(col,i) in title" :key="i">
+                            <td v-for="(col,i) in title" :key="i" :ref="row+col.name">
                                 <sort-click v-if="col.sort" :title="col.label" v-on:sortby="sortBy" :keys="col.sort" :column="column" :type="type" ></sort-click>
                                 <template v-else>{{col.label}}</template>
                             </td>
                         </tr>
                     </thead>
+                    <thead style="z-index:100;position:absolute;top:0px;left:0px;background-color:#ffffff;">
+                        <tr>
+                            <td ref="fixedLeftGrid" v-for="(item,i) in fixedLeft" :key="i" style="height:37px;">
+                                {{item.label||"  "}}
+                            </td>
+                        </tr>
+                    </thead>
+                    <thead style="z-index:100;position:absolute;top:0px;background-color:#ffffff;" :style="{right:scrollRight+'px'}">
+                        <tr>
+                            <td ref="fixedRightGrid" v-for="(item,i) in fixedRight" :key="i" style="height:37px;">
+                                {{item.label||"  "}}
+                            </td>
+                        </tr>
+                    </thead>
                     <template>
-                    <cc-tbody>
+                    <cc-tbody ref="centerData" :grids="baseGrid">
+                    </cc-tbody>
+                    <cc-tbody ref="fixedLeftData" :grids="fixedLeftGrid" fixed="left" style="position:absolute;overflow: hidden;" :style="{bottom:scrollBottom+'px'}">
+                    </cc-tbody>
+                    <cc-tbody ref="fixedRightData" :grids="fixedRightGrid" fixed="right" style="position:absolute;overflow: hidden;" :style="{bottom:scrollBottom+'px',right:scrollRight+'px'}">
                     </cc-tbody>
                     </template>
                 </table>
@@ -25,23 +43,19 @@ export default {
     name: 'cc-table',
     components: {
         'cc-tbody': {
+            props: ['grids', 'fixed'],
+            data () {
+                return { title: [] }
+            },
             render (h) {
-                // console.log('children',this.$parent.data)
-                // console.log('>>',this.$parent.$slots.default)
+                let slotsNames = []
+                let slotMapping = this.$parent.slotMapping
                 // console.log('this=>',this.$parent.$slots.default[0].data.attrs)
                 // console.log('this=>',this.$parent.$slots.default[0].data.scopedSlots.default)
-                // console.log('fun',fun)
-                let slotsNames = []
-                let slotMapping = {}
+                // console.log(this.grids)
                 let title = []
-                let grids = this.$parent.grid
-                let slotsDef = this.$parent.$slots.default.filter((v) => { return v.componentOptions && v.componentOptions.tag === 'cc-table-col' })
-                // console.log('slotsDef',slotsDef)
-                slotsDef.forEach((slot) => {
-                    slotMapping[slot.data.attrs.name] = slot
-                })
-                // console.log('map',slotMapping)
-                grids.forEach((grid) => {
+                let rowSlots = []
+                this.grids.forEach((grid) => {
                     // console.log(grid,slotMapping[grid])
                     let cr = slotMapping[grid]
                     if (cr) {
@@ -69,9 +83,6 @@ export default {
                         })
                     }
                 })
-                // console.log('title',title)
-                this.$parent.title = title
-                let rowSlots = []
                 this.$parent.data.forEach((val, i) => {
                     let slots = []
                     slotsNames.forEach((slot, j) => {
@@ -98,8 +109,23 @@ export default {
                 if (this.$parent.data.length === 0) {
                     rowSlots = [h('tr', {class: 'cc-no--data'}, [h('td', 'no data')])]
                 }
+                this.title = title
                 // slots = [h('tr', [h('td','1'),h('td','2')]),h('tr', [h('td','2'),h('td','1')])]
-                return h('tbody', rowSlots)
+                // return h('tbody', rowSlots)
+                let tbodySet = {ref: 'tbody'}
+                if (this.fixed) {
+                    tbodySet.style = {
+                        position: 'absolute',
+                        top: '37px', // tmp
+                        // right: '15px',
+                        backgroundColor: 'rgb(194, 231, 255)'
+                    }
+                }
+                tbodySet.on = { mousewheel: (e) => {
+                        this.$parent.$refs.scroll.scrollTop = this.$parent.$refs.scroll.scrollTop + (e.deltaY > 0 ? 50 : -50)
+                    }
+                }
+                return h('tbody', tbodySet, rowSlots)
             }
         },
         'sort-click': {
@@ -120,15 +146,29 @@ export default {
             }
         }
     },
-    props: ['data', 'grid', 'column', 'type', 'width', 'height'],
+    props: ['data', 'grid', 'column', 'type', 'width', 'height', 'fixed'],
     data () {
         return {
+            slotMapping: {},
             tableWidth: this.width || '100%',
             tableHeight: this.height || '100%',
-            title: []
+            defaultTop: 0,
+            title: [],
+            fixeTitle: [],
+            fixedLeft: [],
+            fixedRight: [],
+            baseGrid: [],
+            fixedLeftGrid: [],
+            fixedRightGrid: [],
+            scrollRight: 0,
+            scrollBottom: 0
         }
     },
     mounted () {
+        this.defaultTop = parseInt(this.$refs.fixedLeftData.$refs.tbody.style.top)
+        this.title = this.$refs.centerData.title
+        this.fixedLeft = this.$refs.fixedLeftData.title
+        this.fixedRight = this.$refs.fixedRightData.title
         this.$nextTick(() => {
             this.setFixedTitle()
         })
@@ -137,11 +177,39 @@ export default {
         }
     },
     created () {
+        // let slotsNames = []
+        // let slotMapping = {}
+        // let title = []
+        let fixedLeft = []
+        let fixedRight = []
+        let grids = this.grid
+        let slotsDef = this.$slots.default.filter((v) => { return v.componentOptions && v.componentOptions.tag === 'cc-table-col' })
+        // console.log('slotsDef',slotsDef)
+        slotsDef.forEach((slot) => {
+            let name = slot.data.attrs.name
+            this.slotMapping[name] = slot
+            let fixed = slot.data.attrs.fixed
+            if (fixed || fixed === '') {
+                (fixed === 'right' ? fixedRight : fixedLeft).push(name)
+            }
+        })
+        this.baseGrid = fixedLeft.concat(grids.filter(grid => { return fixedLeft.concat(fixedRight).indexOf(grid) === -1 })).concat(fixedRight)
+        this.fixedLeftGrid = fixedLeft
+        this.fixedRightGrid = fixedRight
+        // console.log(fixedLeft, fixedRight)
+        // console.log('title',title)
+        // this.title = this.$refs.base.title
     },
     methods: {
         scrollFunction (e) {
             var titleFixed = this.$refs.tableTitle[1]
             titleFixed.style.left = 0 - e.srcElement.scrollLeft + 'px'
+            // console.log('fixed',this.$refs.test[0])
+            var leftColFixed = this.$refs.fixedLeftData.$refs.tbody
+            leftColFixed.style.top = this.defaultTop - e.srcElement.scrollTop + 'px'
+            var rightColFixed = this.$refs.fixedRightData.$refs.tbody
+            rightColFixed.style.top = this.defaultTop - e.srcElement.scrollTop + 'px'
+            // console.log('scrollFunction')
         },
         setFixedTitle () {
             if (!this.$refs.tableTitle) return
@@ -150,6 +218,9 @@ export default {
             var ps = psTitle.getElementsByTagName('td')
             var psFixed = psFixTitle.getElementsByTagName('td')
             psFixTitle.style.width = psTitle.clientWidth + 'px'
+            var scroll = this.$refs.scroll
+            this.scrollRight = scroll.clientWidth < scroll.offsetWidth ? 17 : 0
+            this.scrollBottom = scroll.clientHeight < scroll.offsetHeight ? 17 : 0
             for (let i = 0; i < ps.length; i++) {
                 psFixed[i].style.width = ps[i].clientWidth + 'px'
             }
@@ -160,6 +231,14 @@ export default {
                 for (let i = 0; i < ps.length; i++) {
                     psFixed[i].style.width = ps[i].clientWidth + 'px'
                 }
+            }
+            if (this.fixedLeftGrid) {
+                this.$refs.fixedLeftGrid.forEach((val, index) => {
+                   val.style.width = ps[index].clientWidth + 'px'
+                })
+                this.$refs.fixedRightGrid.forEach((val, index) => {
+                   val.style.width = ps[ps.length - 1].clientWidth + 'px'
+                })
             }
         },
         setLoading (status) {
