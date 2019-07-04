@@ -1,251 +1,148 @@
 <template>
-    <div class="cc-table--scope">
-        <div class="cc-relative" :style="{width:tableWidth,height:tableHeight}">
-            <div class="cc-fix" :style="{width:tableWidth,height:tableHeight}" @scroll="scrollFunction" ref="scroll">
-                <table class="cc-table" :style="{width:tableWidth,height:tableHeight}">
-                    <thead>
-                        <tr v-for="(row,idx) in ['tableTitle','tableTitleFixed']" ref="tableTitle" :key="idx">
-                            <td v-for="(col,i) in title" :key="i" :ref="row+col.name">
-                                <sort-click v-if="col.sort" :title="col.label" v-on:sortby="sortBy" :keys="col.sort" :column="column" :type="type" ></sort-click>
-                                <template v-else>{{col.label}}</template>
-                            </td>
-                        </tr>
-                    </thead>
-                    <thead style="z-index:100;position:absolute;top:0px;left:0px;background-color:#ffffff;">
-                        <tr>
-                            <td ref="fixedLeftGrid" v-for="(item,i) in fixedLeft" :key="i" style="height:37px;">
-                                {{item.label||"  "}}
-                            </td>
-                        </tr>
-                    </thead>
-                    <thead style="z-index:100;position:absolute;top:0px;background-color:#ffffff;" :style="{right:scrollRight+'px'}">
-                        <tr>
-                            <td ref="fixedRightGrid" v-for="(item,i) in fixedRight" :key="i" style="height:37px;">
-                                {{item.label||"  "}}
-                            </td>
-                        </tr>
-                    </thead>
-                    <template>
-                    <cc-tbody ref="centerData" :grids="baseGrid">
-                    </cc-tbody>
-                    <cc-tbody ref="fixedLeftData" :grids="fixedLeftGrid" fixed="left" style="position:absolute;overflow: hidden;" :style="{bottom:scrollBottom+'px'}">
-                    </cc-tbody>
-                    <cc-tbody ref="fixedRightData" :grids="fixedRightGrid" fixed="right" style="position:absolute;overflow: hidden;" :style="{bottom:scrollBottom+'px',right:scrollRight+'px'}">
-                    </cc-tbody>
-                    </template>
-                </table>
+    <div ref="view" class="table-layout-fix" @scroll="scrollFunction">
+        <div class="table-layout">
+            <div v-show="data.length==0" class="noData">
+                {{'not data'}}
             </div>
+            <cc-table-node ref="left" type="left" class="table-fixed-left"></cc-table-node>
+            <cc-table-node ref="main" type="main" class="table-fixed-main"></cc-table-node>
+            <cc-table-node ref="right" type="right" class="table-fixed-right"></cc-table-node>
         </div>
     </div>
 </template>
 <script>
+import ccTableNode from './cc-table-node'
 export default {
     name: 'cc-table',
-    components: {
-        'cc-tbody': {
-            props: ['grids', 'fixed'],
-            data () {
-                return { title: [] }
-            },
-            render (h) {
-                let slotsNames = []
-                let slotMapping = this.$parent.slotMapping
-                // console.log('this=>',this.$parent.$slots.default[0].data.attrs)
-                // console.log('this=>',this.$parent.$slots.default[0].data.scopedSlots.default)
-                // console.log(this.grids)
-                let title = []
-                let rowSlots = []
-                this.grids.forEach((grid) => {
-                    // console.log(grid,slotMapping[grid])
-                    let cr = slotMapping[grid]
-                    if (cr) {
-                        // title
-                        let attr = slotMapping[grid].data.attrs
-                        let label = attr.label || ''
-                        let sort = attr.sort
-                        title.push({name: grid, label: label, sort: sort})
-                        // console.log(cr.data.staticClass)
-                        // data slot
-                        slotsNames.push({
-                            name: grid,
-                            // data:slotMapping[grid]?slotMapping[grid].data.scopedSlots:undefined,
-                            cr: cr,
-                            scopedSlots: cr.data.scopedSlots ? cr.data.scopedSlots.default : (name) => { return name.txt },
-                            class: cr.data.staticClass ? {class: cr.data.staticClass} : {}
-                        })
-                    } else {
-                        title.push({label: grid})
-                        slotsNames.push({
-                            name: grid,
-                            // cr: cr,
-                            scopedSlots: (name) => { return name.txt }
-                            // class: cr.data.staticClass ? {class: cr.data.staticClass} : {}
-                        })
-                    }
-                })
-                this.$parent.data.forEach((val, i) => {
-                    let slots = []
-                    slotsNames.forEach((slot, j) => {
-                        let props = {
-                            index: i,
-                            row: val,
-                            txt: val[slot.name]
-                        }
-                        // console.log(slot.name,slot.cr.data.scopedSlots)
-                        let txt = slot.scopedSlots(props)
-                        slots.push(h('td', slot.class, txt))// h('td', vnode))
-                    })
-                    // @click="selected=entry" class="trigger" :class="{target:selected == entry}"
-                    let trSet = {
-                        /* on: {
-                            click: function(e) {
-                                console.log('click',e)
-                            }
-                        }, */
-                        class: 'trigger'
-                    }
-                    rowSlots.push(h('tr', trSet, slots))
-                })
-                if (this.$parent.data.length === 0) {
-                    rowSlots = [h('tr', {class: 'cc-no--data'}, [h('td', 'no data')])]
-                }
-                this.title = title
-                // slots = [h('tr', [h('td','1'),h('td','2')]),h('tr', [h('td','2'),h('td','1')])]
-                // return h('tbody', rowSlots)
-                let tbodySet = {ref: 'tbody'}
-                if (this.fixed) {
-                    tbodySet.style = {
-                        position: 'absolute',
-                        top: '37px', // tmp
-                        // right: '15px',
-                        backgroundColor: 'rgb(194, 231, 255)'
-                    }
-                }
-                tbodySet.on = { mousewheel: (e) => {
-                        this.$parent.$refs.scroll.scrollTop = this.$parent.$refs.scroll.scrollTop + (e.deltaY > 0 ? 50 : -50)
-                    }
-                }
-                return h('tbody', tbodySet, rowSlots)
-            }
-        },
-        'sort-click': {
-            props: ['title', 'column', 'keys', 'type'],
-            template: `
-                <div>
-                    <a class="cc-sort--click" @click="sortBy(keys)" style="font-weight: bold;cursor: pointer; text-decoration: underline;color: #428BCA;">{{title}}</a>
-                    <div class="cc-sort--iocn">
-                        <i class="fa fa-caret-up" v-if=" column!=keys || type == 'asc'"></i>
-                        <i class="fa fa-caret-down" v-if=" column!=keys || type == 'desc'"></i>
-                    </div>
-                </div>
-            `,
-            methods: {
-                sortBy (key) {
-                    this.$emit('sortby', key)
-                }
-            }
-        }
-    },
-    props: ['data', 'grid', 'column', 'type', 'width', 'height', 'fixed'],
+    components: { ccTableNode },
+    props: ['data', 'grid'],
     data () {
         return {
+            colTagName: 'cc-table-col',
+            triggerIndex: -1,
             slotMapping: {},
-            tableWidth: this.width || '100%',
-            tableHeight: this.height || '100%',
-            defaultTop: 0,
-            title: [],
-            fixeTitle: [],
-            fixedLeft: [],
-            fixedRight: [],
-            baseGrid: [],
-            fixedLeftGrid: [],
-            fixedRightGrid: [],
-            scrollRight: 0,
-            scrollBottom: 0
+            tables: {
+                main: {},
+                left: {},
+                right: {}
+            }
         }
     },
     mounted () {
-        this.defaultTop = parseInt(this.$refs.fixedLeftData.$refs.tbody.style.top)
-        this.title = this.$refs.centerData.title
-        this.fixedLeft = this.$refs.fixedLeftData.title
-        this.fixedRight = this.$refs.fixedRightData.title
+        window.addEventListener('resize', this.setFixedTitle)
+        this.init()
         this.$nextTick(() => {
             this.setFixedTitle()
         })
-        window.onresize = () => {
-            this.setFixedTitle()
-        }
     },
     created () {
-        // let slotsNames = []
-        // let slotMapping = {}
-        // let title = []
-        let fixedLeft = []
-        let fixedRight = []
-        let grids = this.grid
-        let slotsDef = this.$slots.default.filter((v) => { return v.componentOptions && v.componentOptions.tag === 'cc-table-col' })
-        // console.log('slotsDef',slotsDef)
-        slotsDef.forEach((slot) => {
-            let name = slot.data.attrs.name
-            this.slotMapping[name] = slot
-            let fixed = slot.data.attrs.fixed
-            if (fixed || fixed === '') {
-                (fixed === 'right' ? fixedRight : fixedLeft).push(name)
-            }
-        })
-        this.baseGrid = fixedLeft.concat(grids.filter(grid => { return fixedLeft.concat(fixedRight).indexOf(grid) === -1 })).concat(fixedRight)
-        this.fixedLeftGrid = fixedLeft
-        this.fixedRightGrid = fixedRight
-        // console.log(fixedLeft, fixedRight)
-        // console.log('title',title)
-        // this.title = this.$refs.base.title
+        // console.log('created',Object.keys(this.$slots).filter((val)=>{return val.indexOf('table-layout_title')>-1}))
     },
     methods: {
-        scrollFunction (e) {
-            var titleFixed = this.$refs.tableTitle[1]
-            titleFixed.style.left = 0 - e.srcElement.scrollLeft + 'px'
-            // console.log('fixed',this.$refs.test[0])
-            var leftColFixed = this.$refs.fixedLeftData.$refs.tbody
-            leftColFixed.style.top = this.defaultTop - e.srcElement.scrollTop + 'px'
-            var rightColFixed = this.$refs.fixedRightData.$refs.tbody
-            rightColFixed.style.top = this.defaultTop - e.srcElement.scrollTop + 'px'
-            // console.log('scrollFunction')
-        },
-        setFixedTitle () {
-            if (!this.$refs.tableTitle) return
-            var psTitle = this.$refs.tableTitle[0]
-            var psFixTitle = this.$refs.tableTitle[1]
-            var ps = psTitle.getElementsByTagName('td')
-            var psFixed = psFixTitle.getElementsByTagName('td')
-            psFixTitle.style.width = psTitle.clientWidth + 'px'
-            var scroll = this.$refs.scroll
-            this.scrollRight = scroll.clientWidth < scroll.offsetWidth ? 17 : 0
-            this.scrollBottom = scroll.clientHeight < scroll.offsetHeight ? 17 : 0
-            for (let i = 0; i < ps.length; i++) {
-                psFixed[i].style.width = ps[i].clientWidth + 'px'
-            }
-            if (this.$refs.tableFootTitle) {
-                var psTitleFoot = this.$refs.tableFootTitle[0]
-                var psFixTitleFoot = this.$refs.tableFootTitle[1]
-                psFixTitleFoot.style.width = psTitleFoot.clientWidth + 'px'
-                for (let i = 0; i < ps.length; i++) {
-                    psFixed[i].style.width = ps[i].clientWidth + 'px'
+        renderInit ({type, grids}) {
+            let title = []
+            let slotsNames = []
+            grids.forEach((grid) => {
+                let cr = this.slotMapping[grid]
+                let attr = cr.data.attrs
+                let label = attr.label || ''
+                let sort = attr.sort
+                // let setting = {}
+                title.push({name: grid, label: label, sort: sort})
+                // data slot
+                let slotsName = {
+                    name: grid,
+                    cr: cr,
+                    scopedSlots: cr.data.scopedSlots ? cr.data.scopedSlots.default : (name) => { return name.txt },
+                    setting: {
+                        class: {
+                            [cr.data.staticClass]: cr.data.staticClass,
+                            'is-hidden': type === 'main' && attr.fixed !== undefined
+                        }
+                    }
                 }
-            }
-            if (this.fixedLeftGrid) {
-                this.$refs.fixedLeftGrid.forEach((val, index) => {
-                   val.style.width = ps[index].clientWidth + 'px'
-                })
-                this.$refs.fixedRightGrid.forEach((val, index) => {
-                   val.style.width = ps[ps.length - 1].clientWidth + 'px'
-                })
-            }
+                slotsNames.push(slotsName)
+            })
+            return { title, slotsNames }
         },
-        setLoading (status) {
-            this.$refs.loading.setShow(status)
+        init () {
+            let colTitle = {
+                left: [],
+                center: [],
+                right: [],
+                main: []
+            }
+            // get col tag and mapping grid
+            // this.$slots.default.filter((v)=>{return v.componentOptions&&v.componentOptions.tag==this.colTagName}).forEach((v)=>{
+            this.$slots.default.filter((v) => { return v.tag === this.colTagName }).forEach((v) => {
+                if (v.data.attrs) {
+                    this.slotMapping[v.data.attrs.name] = v
+                }
+            })
+            // split fixed and set new col sort
+            this.grid.forEach((grid) => {
+                if (!this.slotMapping[grid]) return
+                let fixed = this.slotMapping[grid].data.attrs.fixed
+                let position = fixed !== undefined ? (fixed === 'right' ? 'right' : 'left') : 'center'
+                colTitle[position].push(grid)
+            })
+            colTitle.main = [...colTitle.left, ...colTitle.center, ...colTitle.right]
+            let main = this.renderInit({type: 'main', grids: colTitle.main})
+            let left = this.renderInit({type: 'left', grids: colTitle.left})
+            let right = this.renderInit({type: 'right', grids: colTitle.right})
+            this.tables = {
+                main, left, right
+            }
+            console.log('init', this.tables)
         },
-        getLoading () {
-            return this.$refs.loading.getShow()
+        scrollFunction: function (e) {
+            let scrollLeft = e.srcElement.scrollLeft
+            let scrollTop = e.srcElement.scrollTop
+            let titleFixed = ['main', 'left', 'right']
+            titleFixed.forEach((type) => {
+                let ref = this.$refs[type]
+                if (!ref) return
+                ref.$refs.title[1].style.top = scrollTop + 'px'
+            })
+            // titleFixed.style.top = scrollTop + 'px'
+            let leftFixedTable = this.$refs.left.$refs.table
+            let rightFixedTable = this.$refs.right.$refs.table
+            leftFixedTable.style.left = scrollLeft + 'px'
+            rightFixedTable.style.right = 0 - scrollLeft + 'px'
+            // console.log('scrollFunction',e.srcElement.scrollWidth,e.srcElement.scrollLeft+e.srcElement.clientWidth)
+        },
+        setFixedTitle: function () {
+            let titleWidth = ['main', 'left', 'right']
+            titleWidth.forEach((type) => {
+                let ref = this.$refs[type]
+                if (!ref) return
+                let title = ref.$refs.title
+                let psTitle = title[0]
+                let psFixTitle = title[1]
+                let ps = psTitle.children
+                let psFixed = psFixTitle.children
+                // var width = this.$refs.tableTitle[0].clientWidth / ps.length+'px'
+                // console.log(psFixTitle.style.width ,'|', psTitle.clientWidth)
+                psFixTitle.style.width = psTitle.clientWidth + 'px'
+                for (var i = 0; i < ps.length; i++) {
+                    // $(psFixed[i]).width(ps[i].clientWidth);
+                    // console.log(ps[i].clientWidth);
+                    // this.tdsWidth['main'][i] = ps[i].clientWidth + 'px'
+                    psFixed[i].style.width = ps[i].clientWidth + 'px'
+                    // psFixed[i].style.width = width
+                    // ps[i].style.width = width//width + 'px'//ps[i].clientWidth+'px';
+                }
+            })
+            /* if(this.$refs.tableFootTitle){
+                var psTitle = this.$refs.tableFootTitle[0];
+                var psFixTitle = this.$refs.tableFootTitle[1];
+                var ps = psTitle.getElementsByTagName("td");
+                var psFixed = psFixTitle.getElementsByTagName("td");
+                psFixTitle.style.width = psTitle.clientWidth + 'px';
+                for (var i = 0; i < ps.length; i++) {
+                    psFixed[i].style.width = ps[i].clientWidth + 'px';
+                }
+            } */
         },
         sortBy (key) {
             this.$emit('sortby', key)
@@ -253,6 +150,7 @@ export default {
     },
     watch: {
         data () {
+            this.init()
             this.$nextTick(() => {
                 this.setFixedTitle()
             })
@@ -260,65 +158,194 @@ export default {
     }
 }
 </script>
+
 <style lang="scss">
-/*.cc-table--scope {
-}*/
-td,tr{
-    margin: 0;
-    padding: 0;
-}
-.cc-table{
-    border-spacing: 0;
-}
-.cc-relative {
-    overflow: hidden;
-    position: relative;
-}
-.cc-fix {
+$light_medium_gray: #e5e5e5;
+.table-layout-fix {
+    width: 100%;
+    height: 590px;
     overflow: auto;
-}
-.cc-table tbody td {
-    box-sizing: content-box;
-    text-align: center;
-    line-height: 36px;
-    padding: 0 15px 0 15px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border-bottom: 1px solid #ebeef5;
-}
-.cc-table thead tr{
-    white-space: nowrap;
-    text-align: center;
-    line-height: 36px;
-    color: #909399;
-    background-color: #ffffff;
-    border-bottom: 1px solid #ebeef5;
-}
-.cc-table thead tr:nth-of-type(2) {
-    position: absolute;
-    top: 0px;
-    z-index: 100;
-}
-.cc-sort--click{
-    font-weight: bold;
-    cursor: pointer;
-    text-decoration: underline;
-    color: rgb(66, 139, 202)
-}
-.cc-sort--iocn {
-    display: inline-block;
-    vertical-align: middle;
     position: relative;
-    left: 3px;
-    top: -2px;
 }
-.cc-no--data {
-    border-bottom: none;
-    background-color: transparent !important;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translateX(-50%);
+.table-scope{
+    height: 590px;
+    width: 100%;
+    overflow: hidden;
+}
+.table-layout {
+    width: 100%;
+    .is-hidden{
+        visibility:hidden;
+    }
+    table {
+        width: 100%;
+        td {
+            text-align: center;
+            height: 36px;
+            line-height: 36px;
+            padding: 0 17px 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            //max-width:400px;
+            // border-bottom: 2px solid $border-color;
+        }
+        .table_fix--width {
+            display: block;
+            max-width: 160px;
+            margin: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+    .table-fixed {
+        //display:inline-block;
+        background: #fff;
+        width: auto;
+        top: 0px;
+        position: absolute;
+    }
+    .table-fixed-main {
+        @extend .table-fixed;
+        position:relative;
+        z-index:99;
+        right: 0px;
+    }
+    .table-fixed-left {
+        @extend .table-fixed;
+        z-index:100;
+        left: 0px;
+    }
+    .table-fixed-right {
+        @extend .table-fixed;
+        z-index:100;
+        right: 0px;
+    }
+    thead{
+        // position: relative;
+        // width: calc(100% - 17px);
+        background-color: $light_medium_gray;
+        top: 0px;
+        //position: absolute;
+        //position: relative;
+        &::before {
+            content: '';
+            display: block;
+            height: 36px;
+            width: 17px;
+            position: absolute;
+            top: 0;
+            right: 2px;
+            background-color: $light_medium_gray;
+        }
+        td {
+            //@include title_text;
+        }
+        tr {
+            width: 100%;
+            background-color: $light_medium_gray;
+            .sort {
+                display: inline-block;
+                vertical-align: middle;
+                position: relative;
+                left: 3px;
+                top: -2px;
+                i.fa {
+                    display: block;
+                    &.fa-caret-up {
+                        position: absolute;
+                        bottom: -3.5px;
+                    }
+                    &.fa-caret-down {
+                        position: absolute;
+                        top: -3.5px;
+                    }
+                }
+            }
+            .sort-click{
+                font-weight: bold;
+                cursor: pointer;
+                text-decoration: underline;
+                color: #428BCA;
+            }
+        }
+        tr:first-of-type {
+            // display: table;
+            width: 100%;
+        }
+        tr:nth-of-type(2) {
+            //width: 100% !important;
+            position:absolute;
+            top:0px;
+            z-index:100;
+            //width: 100%;
+            //display:none;
+        }
+    }
+    tfoot{
+        background-color: $light_medium_gray;
+        position: relative;
+        td {
+            //@include title_text;
+        }
+        tr {
+            width: 100%;
+            background-color: $light_medium_gray;
+        }
+        tr:first-of-type {
+            width: 100%;
+            visibility: hidden;
+        }
+        tr:nth-of-type(2) {
+            position: absolute;
+            bottom: 0px;
+            z-index: 100;
+        }
+    }
+    tbody {
+        position: relative;
+        > tr {
+            width: 100%;
+            border-bottom: 1px solid #f9f9f9;
+            transition: all .2s ease;
+            &:nth-of-type(odd) {
+                //background-color: $cus_focus;
+            }
+            /*&.trigger:hover {
+                background-color: $cus_gray_normal;
+                transition: all .2s ease;
+            }*/
+            &.trigger{
+                //background-color: $cus_gray_normal;
+                transition: all .2s ease;
+            }
+        }
+        .longlength {
+            width: 180px;
+        }
+        .noData {
+            z-index:99;
+            border-bottom: none;
+            background-color: transparent !important;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%);
+            &:hover {
+                background-color: transparent !important;
+            }
+        }
+    }
+    &.report_fix_title {
+        position: absolute;
+    }
+    /*@include rwd_min-width(1920px) {
+    }*/
+}
+
+.table_width_fixed {
+    width: 100px;
+    max-width: 100px;
 }
 </style>
