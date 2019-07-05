@@ -319,6 +319,7 @@ $light_medium_gray: #e5e5e5;
             &.trigger{
                 //background-color: $cus_gray_normal;
                 transition: all .2s ease;
+                background-color: #2196f363;
             }
         }
         .longlength {

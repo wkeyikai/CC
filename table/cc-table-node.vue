@@ -14,10 +14,11 @@
                 </td>
             </tr>
         </thead>
-        <tbody-item :type="type"></tbody-item>
+        <cc-tbody :type="type"></cc-tbody>
     </table>
 </template>
 <script>
+import ccTbody from './cc-tbody'
 export default {
     name: 'cc-table-node',
     // props: ['data'],
@@ -28,39 +29,7 @@ export default {
         }
     },
     components: {
-        'tbody-item': {
-            data () {
-                return {}
-            },
-            props: ['type'],
-            render (h) {
-                let rowSlots = []
-                this.$parent.data.forEach((val, i) => {
-                    let slots = []
-                    this.$parent.slotsNames.forEach((slot, j) => {
-                        let props = {
-                            index: i,
-                            row: val,
-                            txt: val[slot.name]
-                        }
-                        let txt = slot.scopedSlots(props)
-                        slots.push(h('td', { class: slot.setting.class, style: slot.setting.style }, txt))
-                    })
-                    let trSet = ((index) => {
-                        return {
-                            on: {
-                                mouseover: (e) => {
-                                    this.$parent.triggerIndex = index
-                                }
-                            },
-                            class: { trigger: this.$parent.triggerIndex === index }
-                        }
-                    })(i)
-                    rowSlots.push(h('tr', trSet, slots))
-                })
-                return h('tbody', rowSlots)
-            }
-        }
+       ccTbody
     },
     props: ['type'],
     methods: {
@@ -68,6 +37,9 @@ export default {
             this.sortKey = key
             this.sortType = this.sortType === 'asc' ? 'desc' : 'asc'
             this.$parent.sortBy(key, this.sortType)
+        },
+        slots (slot, para) {
+            return slot.scopedSlots(para)
         }
     },
     computed: {
