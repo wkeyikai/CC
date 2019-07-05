@@ -20,47 +20,47 @@
 <script>
 import ccTbody from './cc-tbody'
 export default {
-    name: 'cc-table-node',
-    // props: ['data'],
-    data () {
-        return {
-            sortKey: '',
-            sortType: ''
-        }
-    },
-    components: {
-       ccTbody
-    },
-    props: ['type'],
-    methods: {
-        sortBy (key) {
-            this.sortKey = key
-            this.sortType = this.sortType === 'asc' ? 'desc' : 'asc'
-            this.$parent.sortBy(key, this.sortType)
-        },
-        slots (slot, para) {
-            return slot.scopedSlots(para)
-        }
-    },
-    computed: {
-        data () {
-            return this.$parent.data
-        },
-        title () {
-            return this.$parent.tables[this.type].title || []
-        },
-        slotsNames () {
-            return this.$parent.tables[this.type].slotsNames || []
-        },
-        triggerIndex: {
-            get () {
-                return this.$parent.triggerIndex
-            },
-            set (value) {
-                this.$parent.triggerIndex = value
-            }
-        }
+  name: 'cc-table-node',
+  // props: ['data'],
+  data () {
+    return {
+      sortKey: '',
+      sortType: ''
     }
+  },
+  components: {
+    ccTbody
+  },
+  props: ['type'],
+  methods: {
+    sortBy (key) {
+      this.sortKey = key
+      this.sortType = this.sortType === 'asc' ? 'desc' : 'asc'
+      this.$parent.sortBy(key, this.sortType)
+    },
+    slots (slot, para) {
+      return slot.scopedSlots(para)
+    }
+  },
+  computed: {
+    data () {
+      return this.$parent.data
+    },
+    title () {
+      return this.$parent.tables[this.type].title || []
+    },
+    slotsNames () {
+      return this.$parent.tables[this.type].slotsNames || []
+    },
+    triggerIndex: {
+      get () {
+        return this.$parent.triggerIndex
+      },
+      set (value) {
+        this.$parent.triggerIndex = value
+      }
+    }
+  }
 }
 </script>
 

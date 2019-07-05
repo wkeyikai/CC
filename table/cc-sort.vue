@@ -9,8 +9,8 @@
 </template>
 <script>
 export default {
-    name: 'cc-sort',
-    props: {title: String, column: String, keys: String, type: String}
+  name: 'cc-sort',
+  props: {title: String, column: String, keys: String, type: String}
 }
 </script>
 

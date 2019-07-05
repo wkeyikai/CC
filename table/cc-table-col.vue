@@ -1,12 +1,12 @@
 <template>
-    <td>
-       <slot></slot>
-    </td>
+  <td>
+    <slot></slot>
+  </td>
 </template>
 <script>
 export default {
-    name: 'cc-table-col',
-    props: []
+  name: 'cc-table-col',
+  props: []
 }
 </script>
 

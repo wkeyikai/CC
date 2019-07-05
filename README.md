@@ -7,6 +7,7 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import './plugin/cc'
+import '@/plugin/cc/theme/style.scss'
 
 Vue.config.productionTip = false
 
