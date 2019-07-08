@@ -1,11 +1,9 @@
 <template>
-  <div ref="view" class="table-layout-fix" @scroll="scrollFunction">
-    <div class="table-layout">
-      <div v-show="data.length==0" class="noData">{{'not data'}}</div>
-      <cc-table-node ref="left" type="left" class="table-fixed-left"></cc-table-node>
-      <cc-table-node ref="main" type="main" class="table-fixed-main"></cc-table-node>
-      <cc-table-node ref="right" type="right" class="table-fixed-right"></cc-table-node>
-    </div>
+  <div ref="view" class="cc-table-view" @scroll="scrollFunction">
+    <div v-show="data.length==0" class="noData">{{'not data'}}</div>
+    <cc-table-node ref="left" type="left" class="table-fixed-left"></cc-table-node>
+    <cc-table-node ref="main" type="main" class="table-fixed-main"></cc-table-node>
+    <cc-table-node ref="right" type="right" class="table-fixed-right"></cc-table-node>
   </div>
 </template>
 <script>

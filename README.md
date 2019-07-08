@@ -30,7 +30,7 @@ use table
 
 ```vue
 <template>
-    <div>
+  <div>
 		<cc-table :data="gridData" :grid="['space','id','name']"  @sortby="sortBy" :column="sort.column" :type="sort.sort_type">
 			<cc-table-col name="space" label="test">
 				<template slot-scope="{row}">
@@ -49,8 +49,9 @@ use table
 </template>
 <script>
 import '@/plugin/cc'
+import '@/plugin/cc/theme/style.scss'
 export default {
-    components: { ccTable, ccTableCol },
+  components: { ccTable, ccTableCol },
 	data () {
 		return {
 			demoRowData: {

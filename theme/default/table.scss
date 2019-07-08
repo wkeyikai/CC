@@ -1,0 +1,102 @@
+$table-title: #e5e5e5;
+.cc-table-view {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    position: relative;
+    .is-hidden{
+        visibility:hidden;
+    }
+    table {
+        width: 100%;
+        td {
+            height: 36px;
+            line-height: 36px;
+            padding: 0 5px 0 5px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+    thead,tfoot{
+        top: 0px;
+        tr {
+            background-color: $table-title;
+            .sort {
+                display: inline-block;
+                vertical-align: middle;
+                position: relative;
+                left: 3px;
+                top: -2px;
+                i.fa {
+                    display: block;
+                    &.fa-caret-up {
+                        position: absolute;
+                        bottom: -3.5px;
+                    }
+                    &.fa-caret-down {
+                        position: absolute;
+                        top: -3.5px;
+                    }
+                }
+            }
+            .sort-click{
+                font-weight: bold;
+                cursor: pointer;
+                text-decoration: underline;
+                color: #428BCA;
+            }
+        }
+        tr:first-of-type {
+            width: 100%;
+        }
+        tr:nth-of-type(2) {
+            position:absolute;
+            top:0px;
+            z-index:100;
+        }
+    }
+    tbody {
+        tr {
+            &.trigger{
+                transition: all .2s ease;
+                background-color: #2196f363;
+            }
+        }
+    }
+    .table-fixed {
+        background: #fff;
+        width: auto;
+        top: 0px;
+        position: absolute;
+    }
+    .table-fixed-main {
+        @extend .table-fixed;
+        position:relative;
+        z-index:99;
+        right: 0px;
+    }
+    .table-fixed-left {
+        @extend .table-fixed;
+        z-index:100;
+        left: 0px;
+    }
+    .table-fixed-right {
+        @extend .table-fixed;
+        z-index:100;
+        right: 0px;
+    }
+}
+.noData {
+    z-index:99;
+    border-bottom: none;
+    background-color: transparent !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%);
+    &:hover {
+        background-color: transparent !important;
+    }
+}
